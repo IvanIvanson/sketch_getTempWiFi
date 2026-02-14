@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Мониторинг ESP32</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial; text-align: center; margin: 20px; }
+        #temp { font-size: 48px; color: #2196F3; }
+        canvas { max-width: 800px; margin: auto; }
+    </style>
+</head>
+<body>
+    <h1>Температура с ESP32</h1>
+    <div id="temp">--.- °C</div>
+    <canvas id="tempChart"></canvas>
+
+    <script>
+        const ESP32_IP = '192.168.0.105'; // ЗАМЕНИТЕ НА ВАШ IP!
+        let chart;
+        let history = [];
+
+        async function getData() {
+            try {
+                const response = await fetch(`http://${ESP32_IP}/data`);
+                const data = await response.json();
+                document.getElementById('temp').textContent = data.current.toFixed(1) + ' °C';
+                
+                history = data.history;
+                if (chart) {
+                    chart.data.datasets[0].data = history;
+                    chart.update();
+                }
+            } catch (error) {
+                document.getElementById('temp').textContent = 'Ошибка связи';
+            }
+        }
+
+        window.onload = () => {
+            const ctx = document.getElementById('tempChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array(20).fill(''),
+                    datasets: [{
+                        label: 'Температура (°C)',
+                        data: Array(20).fill(0),
+                        borderColor: '#2196F3'
+                    }]
+                }
+            });
+            getData();
+            setInterval(getData, 5000);
+        };
+    </script>
+</body>
+</html>
